@@ -1,4 +1,5 @@
 import base64
+import string
 import time
 from decimal import Decimal
 from typing import Any
@@ -147,33 +148,49 @@ class EbayClient:
             "X-EBAY-C-MARKETPLACE-ID": marketplace_id,
         }
 
-        all_items: list[dict[str, Any]] = []
-        offset = 0
+        # Browse Search currently rejects seller-only queries for some accounts.
+        # Use a sharded q-search strategy and merge by legacy item id.
+        all_items: dict[str, dict[str, Any]] = {}
         limit = 50
-        max_items = 200
+        max_items = 500
+        query_seeds = list(string.ascii_lowercase) + list(string.digits)
 
-        while offset < max_items:
-            params = {
-                "filter": f"sellers:{{{seller_username}}}",
-                "limit": str(limit),
-                "offset": str(offset),
-            }
-            payload = self._request_with_retries(
-                path="/buy/browse/v1/item_summary/search",
-                headers=headers,
-                params=params,
-            )
-            items = payload.get("itemSummaries", [])
-            if not items:
+        for seed in query_seeds:
+            offset = 0
+            for _ in range(2):
+                params = {
+                    "q": seed,
+                    "filter": f"sellers:{{{seller_username}}}",
+                    "limit": str(limit),
+                    "offset": str(offset),
+                }
+                payload = self._request_with_retries(
+                    path="/buy/browse/v1/item_summary/search",
+                    headers=headers,
+                    params=params,
+                )
+                items = payload.get("itemSummaries", [])
+                if not items:
+                    break
+
+                for item in items:
+                    legacy_item_id = str(item.get("legacyItemId") or item.get("itemId") or "").split("|")[-1]
+                    if not legacy_item_id:
+                        continue
+                    all_items[legacy_item_id] = item
+                    if len(all_items) >= max_items:
+                        break
+
+                if len(all_items) >= max_items or len(items) < limit:
+                    break
+                offset += limit
+
+            if len(all_items) >= max_items:
                 break
-            all_items.extend(items)
-            if len(items) < limit:
-                break
-            offset += limit
 
         from app.services.shop_scan_service import ShopListingSnapshot
 
-        return [self._map_item_summary_payload(item) for item in all_items]
+        return [self._map_item_summary_payload(item) for item in all_items.values()]
 
     def _get_valid_token(self) -> str:
         now = time.time()
