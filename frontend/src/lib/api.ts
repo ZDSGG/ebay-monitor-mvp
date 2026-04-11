@@ -16,13 +16,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const appSecret = getStoredAppSecret();
+  const initHeaders = new Headers(init?.headers);
+  const headers = new Headers();
+
+  headers.set("Content-Type", "application/json");
+  if (appSecret) {
+    headers.set("X-App-Secret", appSecret);
+  }
+  initHeaders.forEach((value, key) => {
+    headers.set(key, value);
+  });
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(appSecret ? { "X-App-Secret": appSecret } : {}),
-      ...(init?.headers ?? {}),
-    },
     ...init,
+    headers,
   });
 
   if (!response.ok) {
@@ -30,7 +37,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       clearStoredAppSecret();
     }
     const body = await response.json().catch(() => null);
-    throw new Error(body?.detail ?? `Request failed with ${response.status}`);
+    const detail = Array.isArray(body?.detail)
+      ? body.detail.map((entry: { msg?: string }) => entry?.msg ?? "Request validation failed.").join("; ")
+      : typeof body?.detail === "string"
+        ? body.detail
+        : `Request failed with ${response.status}`;
+    throw new Error(detail);
   }
 
   return response.json() as Promise<T>;
