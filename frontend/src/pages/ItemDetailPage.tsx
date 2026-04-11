@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { PriceHistoryChart } from "../components/PriceHistoryChart";
 import { StatusPill } from "../components/StatusPill";
-import { getItemDetail, getItemExportUrl } from "../lib/api";
+import { downloadItemExport, getItemDetail } from "../lib/api";
 import { formatMoney, formatPercent, formatUtc } from "../lib/format";
 import { getCompareWindowLabel, getEventTone, getPriceChangeLabel } from "../lib/itemLabels";
 import type { ItemDetailResponse } from "../types";
@@ -12,6 +12,7 @@ export function ItemDetailPage() {
   const [item, setItem] = useState<ItemDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     getItemDetail(itemId)
@@ -19,6 +20,21 @@ export function ItemDetailPage() {
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, [itemId]);
+
+  async function handleExport() {
+    if (!item) {
+      return;
+    }
+
+    try {
+      setExporting(true);
+      await downloadItemExport(item.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导出失败");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   if (loading) return <div className="empty-panel">正在加载详情...</div>;
   if (error) return <div className="empty-panel error-panel">{error}</div>;
@@ -85,9 +101,9 @@ export function ItemDetailPage() {
               <h3>价格快照</h3>
             </div>
             <div className="detail-actions">
-              <a className="action-link" href={getItemExportUrl(item.id)}>
-                导出 Excel
-              </a>
+              <button type="button" className="action-link" onClick={handleExport} disabled={exporting}>
+                {exporting ? "导出中..." : "导出 Excel"}
+              </button>
               <a className="action-link" href={item.canonical_item_url ?? item.url} target="_blank" rel="noreferrer">
                 打开 eBay
               </a>

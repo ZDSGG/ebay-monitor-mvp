@@ -1,10 +1,11 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
+from app.core.auth import require_app_access
 from app.schemas.url_parser import EbayUrlParseRequest, EbayUrlParseResponse
 from app.services.url_parser import parse_ebay_item_url
 
 
-router = APIRouter(prefix="/utils", tags=["utils"])
+router = APIRouter(prefix="/utils", tags=["utils"], dependencies=[Depends(require_app_access)])
 
 
 @router.post("/parse-ebay-url", response_model=EbayUrlParseResponse)

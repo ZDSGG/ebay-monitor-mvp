@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_app_access
 from app.core.database import get_db
 from app.services.report_service import ReportService
 
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(prefix="/reports", tags=["reports"], dependencies=[Depends(require_app_access)])
 
 
 @router.get("/items/{item_id}/export")

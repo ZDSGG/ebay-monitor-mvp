@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     scheduler_daily_minute_utc: int = 0
     enable_scheduler: bool = True
     cron_secret: str = ""
+    app_access_secret: str = ""
 
     model_config = SettingsConfigDict(
         env_file=ROOT_DIR / ".env",

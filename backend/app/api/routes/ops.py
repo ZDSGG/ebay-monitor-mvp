@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_app_access
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.enums import JobStatus
@@ -8,7 +9,7 @@ from app.schemas.ops import CrawlTriggerResponse
 from app.services.crawl_service import CrawlService
 
 
-router = APIRouter(prefix="/ops", tags=["ops"])
+router = APIRouter(prefix="/ops", tags=["ops"], dependencies=[Depends(require_app_access)])
 settings = get_settings()
 
 

@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
+from app.core.auth import require_app_access
 from app.core.database import get_db
 from app.schemas.item import (
     BulkDeleteResponse,
@@ -22,7 +23,7 @@ from app.services.csv_import_service import CsvImportService
 from app.services.item_service import DuplicateItemError, ItemService
 
 
-router = APIRouter(prefix="/items", tags=["items"])
+router = APIRouter(prefix="/items", tags=["items"], dependencies=[Depends(require_app_access)])
 
 
 @router.get("/dashboard-summary", response_model=DashboardSummaryResponse)
