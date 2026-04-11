@@ -219,6 +219,7 @@ export type ShopListingEntry = {
   current_shipping_cost: string | null;
   total_cost: string | null;
   availability: string | null;
+  sales_summary: string | null;
   listing_status: string;
   first_seen_at: string;
   last_seen_at: string;

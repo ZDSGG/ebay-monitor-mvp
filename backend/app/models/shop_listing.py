@@ -26,6 +26,7 @@ class ShopListing(Base):
     current_shipping_cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     total_cost: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
     availability: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sales_summary: Mapped[str | None] = mapped_column(String(255), nullable=True)
     listing_status: Mapped[ListingStatus] = mapped_column(
         Enum(ListingStatus, name="listing_status_enum"),
         nullable=False,

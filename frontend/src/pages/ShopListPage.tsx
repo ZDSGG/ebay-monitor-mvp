@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { createShop, getShops, scanShop } from "../lib/api";
+import { createShop, deleteShop, getShops, scanShop } from "../lib/api";
 import { formatUtc } from "../lib/format";
 import { StatusPill } from "../components/StatusPill";
 import type { ShopResponse } from "../types";
@@ -85,6 +85,22 @@ export function ShopListPage() {
     }
   }
 
+  async function handleDeleteShop(shop: ShopResponse) {
+    const confirmed = window.confirm(`确认移除店铺监控“${shop.shop_name}”吗？相关店铺数据会一起删除。`);
+    if (!confirmed) {
+      return;
+    }
+    setError(null);
+    setMessage(null);
+    try {
+      await deleteShop(shop.id);
+      await loadShops();
+      setMessage(`店铺「${shop.shop_name}」已移除监控。`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "店铺移除失败。");
+    }
+  }
+
   if (loading) {
     return <div className="empty-panel">正在加载店铺工作台...</div>;
   }
@@ -116,7 +132,7 @@ export function ShopListPage() {
               <input
                 value={formUrl}
                 onChange={(event) => setFormUrl(event.target.value)}
-                placeholder="https://www.ebay.com/usr/..."
+                placeholder="https://www.ebay.com/usr/... 或 /str/..."
                 required
               />
             </label>
@@ -188,6 +204,9 @@ export function ShopListPage() {
                   <a className="table-action" href={shop.shop_url} target="_blank" rel="noreferrer">
                     打开店铺
                   </a>
+                  <button className="table-action" type="button" onClick={() => handleDeleteShop(shop)}>
+                    移除监控
+                  </button>
                 </div>
               </div>
             ))}

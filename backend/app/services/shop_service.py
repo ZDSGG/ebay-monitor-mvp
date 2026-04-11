@@ -19,6 +19,7 @@ from app.schemas.shop import (
     ShopScanSummary,
 )
 from app.services.alert_service import AlertService
+from app.services.shop_listing_sales_service import ShopListingSalesService
 from app.services.shop_parser import parse_ebay_shop_url
 from app.services.shop_scan_service import ShopScanService
 
@@ -32,6 +33,7 @@ class ShopService:
         self.db = db
         self.shop_scan_service = ShopScanService(db)
         self.alert_service = AlertService(db)
+        self.sales_service = ShopListingSalesService()
 
     def create_shop(self, url: str, note: str | None) -> tuple[Shop, ShopScanSummary]:
         parsed = parse_ebay_shop_url(url)
@@ -106,6 +108,7 @@ class ShopService:
             .order_by(ShopListing.updated_at.desc())
             .limit(100)
         ).all()
+        self._hydrate_sales_summary(active_listings[:10])
 
         total_listings = self.db.scalar(
             select(func.count()).select_from(ShopListing).where(ShopListing.shop_id == shop.id)
@@ -174,6 +177,7 @@ class ShopService:
                     current_shipping_cost=listing.current_shipping_cost,
                     total_cost=listing.total_cost,
                     availability=listing.availability,
+                    sales_summary=listing.sales_summary,
                     listing_status=listing.listing_status.value,
                     first_seen_at=listing.first_seen_at,
                     last_seen_at=listing.last_seen_at,
@@ -182,3 +186,26 @@ class ShopService:
                 for listing in active_listings
             ],
         )
+
+    def delete_shop(self, shop_id: str) -> bool:
+        shop = self.db.get(Shop, shop_id)
+        if shop is None:
+            return False
+
+        self.db.delete(shop)
+        self.db.commit()
+        return True
+
+    def _hydrate_sales_summary(self, listings: list[ShopListing]) -> None:
+        updated = False
+        for listing in listings:
+            if listing.sales_summary or not listing.item_url:
+                continue
+            sales_summary = self.sales_service.fetch_sales_summary(listing.item_url)
+            if not sales_summary:
+                continue
+            listing.sales_summary = sales_summary
+            updated = True
+
+        if updated:
+            self.db.commit()

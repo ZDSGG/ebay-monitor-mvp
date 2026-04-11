@@ -99,6 +99,22 @@ export function scanShop(shopId: string) {
   });
 }
 
+export async function deleteShop(shopId: string) {
+  const appSecret = getStoredAppSecret();
+  const response = await fetch(`${API_BASE_URL}/shops/${shopId}`, {
+    method: "DELETE",
+    headers: appSecret ? { "X-App-Secret": appSecret } : undefined,
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearStoredAppSecret();
+    }
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.detail ?? `Request failed with ${response.status}`);
+  }
+}
+
 export function getAlerts(params?: { status?: string; shopId?: string; limit?: number }) {
   const query = new URLSearchParams();
   if (params?.status) {

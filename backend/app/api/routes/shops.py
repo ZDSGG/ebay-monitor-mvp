@@ -68,3 +68,10 @@ def scan_single_shop(shop_id: str, db: Session = Depends(get_db)) -> CrawlTrigge
         failed=1 if job.status == JobStatus.FAILED else 0,
         trigger_source="MANUAL",
     )
+
+
+@router.delete("/{shop_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_shop(shop_id: str, db: Session = Depends(get_db)) -> None:
+    deleted = ShopService(db=db).delete_shop(shop_id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Shop not found.")

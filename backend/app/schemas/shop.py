@@ -66,6 +66,7 @@ class ShopListingEntry(BaseModel):
     current_shipping_cost: Decimal | None
     total_cost: Decimal | None
     availability: str | None
+    sales_summary: str | None
     listing_status: str
     first_seen_at: datetime
     last_seen_at: datetime

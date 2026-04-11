@@ -10,6 +10,7 @@ def main() -> None:
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE crawl_jobs ADD COLUMN IF NOT EXISTS shop_id UUID"))
         connection.execute(text("CREATE INDEX IF NOT EXISTS ix_crawl_jobs_shop_id ON crawl_jobs (shop_id)"))
+        connection.execute(text("ALTER TABLE shop_listings ADD COLUMN IF NOT EXISTS sales_summary VARCHAR(255)"))
         connection.execute(
             text(
                 """

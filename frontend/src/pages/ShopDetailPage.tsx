@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { StatusPill } from "../components/StatusPill";
-import { getAlertRules, getAlerts, getShopDetail, scanShop } from "../lib/api";
+import { deleteShop, getAlertRules, getAlerts, getShopDetail, scanShop } from "../lib/api";
 import { formatMoney, formatPercent, formatUtc } from "../lib/format";
 import type { AlertEntry, AlertRuleEntry, ShopDetailResponse } from "../types";
 
@@ -14,6 +14,7 @@ function getSeverityTone(severity: string) {
 
 export function ShopDetailPage() {
   const { shopId = "" } = useParams();
+  const navigate = useNavigate();
   const [shop, setShop] = useState<ShopDetailResponse | null>(null);
   const [alerts, setAlerts] = useState<AlertEntry[]>([]);
   const [rules, setRules] = useState<AlertRuleEntry[]>([]);
@@ -72,6 +73,22 @@ export function ShopDetailPage() {
     }
   }
 
+  async function handleDelete() {
+    if (!shop) {
+      return;
+    }
+    const confirmed = window.confirm(`确认移除店铺监控“${shop.shop_name}”吗？相关店铺数据会一起删除。`);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await deleteShop(shop.id);
+      navigate("/shops");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "店铺移除失败。");
+    }
+  }
+
   if (loading) return <div className="empty-panel">正在加载店铺详情...</div>;
   if (error) return <div className="empty-panel error-panel">{error}</div>;
   if (!shop) return <div className="empty-panel">未找到店铺。</div>;
@@ -85,7 +102,7 @@ export function ShopDetailPage() {
           <p className="eyebrow">{shop.marketplace}</p>
           <h2>{shop.shop_name}</h2>
           <p className="muted-note">
-            @{shop.seller_username} · 最近扫描 {formatUtc(shop.last_scanned_at)}
+            @{shop.seller_username} | 最近扫描 {formatUtc(shop.last_scanned_at)}
           </p>
           <div className="detail-meta">
             <div>
@@ -119,6 +136,9 @@ export function ShopDetailPage() {
             <Link className="action-link" to="/alerts">
               打开预警中心
             </Link>
+            <button className="action-link" type="button" onClick={handleDelete}>
+              移除监控
+            </button>
           </div>
         </div>
       </div>
@@ -217,6 +237,7 @@ export function ShopDetailPage() {
                   <th>价格</th>
                   <th>运费</th>
                   <th>总价</th>
+                  <th>销量明细</th>
                   <th>最近出现</th>
                   <th>操作</th>
                 </tr>
@@ -233,6 +254,7 @@ export function ShopDetailPage() {
                     <td>{formatMoney(listing.current_price, listing.currency ?? "USD")}</td>
                     <td>{formatMoney(listing.current_shipping_cost, listing.currency ?? "USD")}</td>
                     <td>{formatMoney(listing.total_cost, listing.currency ?? "USD")}</td>
+                    <td>{listing.sales_summary ?? "--"}</td>
                     <td>{formatUtc(listing.last_seen_at)}</td>
                     <td>
                       <a className="table-action" href={listing.item_url} target="_blank" rel="noreferrer">
