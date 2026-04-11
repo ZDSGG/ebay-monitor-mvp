@@ -35,6 +35,11 @@ class Settings(BaseSettings):
     scheduler_daily_minute_utc: int = 0
     shop_scan_daily_hour_utc: int = 9
     shop_scan_daily_minute_utc: int = 30
+    shop_browser_timeout_seconds: float = 20.0
+    shop_browser_wait_after_load_ms: int = 1500
+    shop_browser_locale: str = "en-US"
+    shop_browser_timezone_id: str = "America/New_York"
+    shop_browser_country_code: str = "US"
     enable_scheduler: bool = True
     cron_secret: str = ""
     app_access_secret: str = ""
