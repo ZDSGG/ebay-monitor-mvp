@@ -6,6 +6,7 @@ __pycache__/
 *.pyc
 .postgres.pid
 .backend.pid
+.frontend.pid
 postgres-data/
 postgresql-binaries/
 *.log
