@@ -1,0 +1,13 @@
+.env
+.venv/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.postgres.pid
+.backend.pid
+postgres-data/
+postgresql-binaries/
+*.log
+postgres_pw.txt
+.playwright-cli/

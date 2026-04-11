@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/types.ts","./src/components/pricechangecell.tsx","./src/components/pricehistorychart.tsx","./src/components/statuspill.tsx","./src/lib/api.ts","./src/lib/format.ts","./src/pages/itemcreatepage.tsx","./src/pages/itemdetailpage.tsx","./src/pages/itemlistpage.tsx","./src/shell/appshell.tsx"],"errors":true,"version":"5.9.3"}
