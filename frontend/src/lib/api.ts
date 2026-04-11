@@ -1,4 +1,7 @@
 import type {
+  AlertListResponse,
+  AlertResolveResponse,
+  AlertRuleListResponse,
   BulkDeleteResponse,
   BulkDeactivateResponse,
   BulkRefreshResponse,
@@ -9,6 +12,10 @@ import type {
   ItemListResponse,
   MonitoredItemResponse,
   RecentEventListResponse,
+  ShopCreateResponse,
+  ShopDetailResponse,
+  ShopResponse,
+  ShopScanTriggerResponse,
 } from "../types";
 import { clearStoredAppSecret, getStoredAppSecret } from "./auth";
 
@@ -68,6 +75,53 @@ export function createItem(payload: { url: string; note?: string }) {
   return request<ItemCreateResponse>("/items", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+export function getShops() {
+  return request<ShopResponse[]>("/shops");
+}
+
+export function createShop(payload: { url: string; note?: string }) {
+  return request<ShopCreateResponse>("/shops", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function getShopDetail(shopId: string) {
+  return request<ShopDetailResponse>(`/shops/${shopId}`);
+}
+
+export function scanShop(shopId: string) {
+  return request<ShopScanTriggerResponse>(`/shops/${shopId}/scan`, {
+    method: "POST",
+  });
+}
+
+export function getAlerts(params?: { status?: string; shopId?: string; limit?: number }) {
+  const query = new URLSearchParams();
+  if (params?.status) {
+    query.set("status", params.status);
+  }
+  if (params?.shopId) {
+    query.set("shop_id", params.shopId);
+  }
+  if (params?.limit) {
+    query.set("limit", String(params.limit));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return request<AlertListResponse>(`/alerts${suffix}`);
+}
+
+export function getAlertRules(shopId?: string) {
+  const suffix = shopId ? `?shop_id=${encodeURIComponent(shopId)}` : "";
+  return request<AlertRuleListResponse>(`/alerts/rules${suffix}`);
+}
+
+export function resolveAlert(alertId: string) {
+  return request<AlertResolveResponse>(`/alerts/${alertId}/resolve`, {
+    method: "PATCH",
   });
 }
 

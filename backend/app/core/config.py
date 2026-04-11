@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     ebay_max_retries: int = 3
     scheduler_daily_hour_utc: int = 9
     scheduler_daily_minute_utc: int = 0
+    shop_scan_daily_hour_utc: int = 9
+    shop_scan_daily_minute_utc: int = 30
     enable_scheduler: bool = True
     cron_secret: str = ""
     app_access_secret: str = ""

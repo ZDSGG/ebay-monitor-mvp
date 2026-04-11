@@ -3,11 +3,13 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.alerts import router as alerts_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.health import router as health_router
 from app.api.routes.items import router as items_router
 from app.api.routes.ops import router as ops_router
 from app.api.routes.reports import router as reports_router
+from app.api.routes.shops import router as shops_router
 from app.api.routes.utils import router as utils_router
 from app.core.config import get_settings
 from app.services.scheduler_service import start_scheduler, stop_scheduler
@@ -42,7 +44,9 @@ app.add_middleware(
 
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(auth_router, prefix=settings.api_prefix)
+app.include_router(alerts_router, prefix=settings.api_prefix)
 app.include_router(items_router, prefix=settings.api_prefix)
+app.include_router(shops_router, prefix=settings.api_prefix)
 app.include_router(ops_router, prefix=settings.api_prefix)
 app.include_router(reports_router, prefix=settings.api_prefix)
 app.include_router(utils_router, prefix=settings.api_prefix)

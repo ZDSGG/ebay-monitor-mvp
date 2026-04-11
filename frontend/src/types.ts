@@ -175,3 +175,133 @@ export type CsvImportResponse = {
   failed_count: number;
   results: CsvImportItemResult[];
 };
+
+export type ShopScanSummary = {
+  status: string;
+  message: string;
+};
+
+export type ShopResponse = {
+  id: string;
+  marketplace: string;
+  seller_username: string;
+  shop_name: string;
+  shop_url: string;
+  note: string | null;
+  status: string;
+  scan_enabled: boolean;
+  last_scanned_at: string | null;
+  created_at: string;
+  updated_at: string;
+  initial_scan: ShopScanSummary | null;
+};
+
+export type ShopDailyStatEntry = {
+  id: string;
+  stat_date: string;
+  active_listing_count: number;
+  new_listing_count: number;
+  ended_listing_count: number;
+  price_drop_count: number;
+  price_rise_count: number;
+  average_price: string | null;
+  scanned_at: string;
+};
+
+export type ShopListingEntry = {
+  id: string;
+  legacy_item_id: string;
+  title: string;
+  item_url: string;
+  image_url: string | null;
+  currency: string | null;
+  current_price: string | null;
+  current_shipping_cost: string | null;
+  total_cost: string | null;
+  availability: string | null;
+  listing_status: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  last_price_change_at: string | null;
+};
+
+export type ShopPortrait = {
+  active_listing_count: number;
+  active_ratio: string;
+  average_price: string | null;
+  last_7d_new_count: number;
+  last_7d_ended_count: number;
+  last_7d_price_drop_count: number;
+  open_alert_count: number;
+};
+
+export type ShopDetailResponse = {
+  id: string;
+  marketplace: string;
+  seller_username: string;
+  shop_name: string;
+  shop_url: string;
+  note: string | null;
+  status: string;
+  scan_enabled: boolean;
+  last_scanned_at: string | null;
+  created_at: string;
+  updated_at: string;
+  portrait: ShopPortrait;
+  recent_stats: ShopDailyStatEntry[];
+  active_listings: ShopListingEntry[];
+};
+
+export type ShopCreateResponse = ShopResponse;
+
+export type ShopScanTriggerResponse = {
+  requested: number;
+  succeeded: number;
+  failed: number;
+  trigger_source: string;
+};
+
+export type AlertEntry = {
+  id: string;
+  shop_id: string | null;
+  shop_name: string | null;
+  seller_username: string | null;
+  alert_rule_id: string | null;
+  alert_type: string;
+  severity: string;
+  status: string;
+  title: string;
+  message: string;
+  triggered_at: string;
+  resolved_at: string | null;
+  payload_json: Record<string, unknown> | null;
+};
+
+export type AlertListResponse = {
+  alerts: AlertEntry[];
+};
+
+export type AlertResolveResponse = {
+  id: string;
+  status: string;
+  resolved_at: string | null;
+};
+
+export type AlertRuleEntry = {
+  id: string;
+  shop_id: string | null;
+  shop_name: string | null;
+  rule_name: string;
+  rule_type: string;
+  threshold_value: string | null;
+  threshold_unit: string | null;
+  is_enabled: boolean;
+  description: string | null;
+  params_json: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AlertRuleListResponse = {
+  rules: AlertRuleEntry[];
+};

@@ -140,6 +140,41 @@ class EbayClient:
             detail=f"Failed to fetch eBay item data after retries: {last_exception}",
         )
 
+    def search_items_by_seller_username(self, seller_username: str, marketplace_id: str) -> list[Any]:
+        token = self._get_valid_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "X-EBAY-C-MARKETPLACE-ID": marketplace_id,
+        }
+
+        all_items: list[dict[str, Any]] = []
+        offset = 0
+        limit = 50
+        max_items = 200
+
+        while offset < max_items:
+            params = {
+                "filter": f"sellers:{{{seller_username}}}",
+                "limit": str(limit),
+                "offset": str(offset),
+            }
+            payload = self._request_with_retries(
+                path="/buy/browse/v1/item_summary/search",
+                headers=headers,
+                params=params,
+            )
+            items = payload.get("itemSummaries", [])
+            if not items:
+                break
+            all_items.extend(items)
+            if len(items) < limit:
+                break
+            offset += limit
+
+        from app.services.shop_scan_service import ShopListingSnapshot
+
+        return [self._map_item_summary_payload(item) for item in all_items]
+
     def _get_valid_token(self) -> str:
         now = time.time()
         if self._access_token and now < self._access_token_expires_at:
@@ -150,6 +185,43 @@ class EbayClient:
         expires_in = int(payload.get("expires_in", 7200))
         self._access_token_expires_at = now + max(expires_in - 60, 60)
         return self._access_token
+
+    def _request_with_retries(self, path: str, headers: dict[str, str], params: dict[str, str]) -> dict[str, Any]:
+        last_exception: Exception | None = None
+        request_headers = headers.copy()
+
+        for attempt in range(1, self.settings.ebay_max_retries + 1):
+            try:
+                with httpx.Client(timeout=self.settings.ebay_request_timeout_seconds) as client:
+                    response = client.get(
+                        f"{self.settings.ebay_api_base_url}{path}",
+                        headers=request_headers,
+                        params=params,
+                    )
+
+                if response.status_code == status.HTTP_401_UNAUTHORIZED and attempt < self.settings.ebay_max_retries:
+                    self._access_token = None
+                    self._access_token_expires_at = 0.0
+                    token = self._get_valid_token()
+                    request_headers["Authorization"] = f"Bearer {token}"
+                    continue
+
+                if response.status_code >= 500 and attempt < self.settings.ebay_max_retries:
+                    time.sleep(0.5 * attempt)
+                    continue
+
+                response.raise_for_status()
+                return response.json()
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
+                last_exception = exc
+                if attempt >= self.settings.ebay_max_retries:
+                    break
+                time.sleep(0.5 * attempt)
+
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to fetch eBay data after retries: {last_exception}",
+        )
 
     def _map_item_payload(self, payload: dict) -> EbayItemData:
         price_payload = payload.get("price") or {}
@@ -170,4 +242,32 @@ class EbayClient:
             availability=payload.get("availability") or payload.get("estimatedAvailabilities", [{}])[0].get("availabilityStatus"),
             image=image_payload.get("imageUrl"),
             item_url=payload.get("itemWebUrl") or "",
+        )
+
+    def _map_item_summary_payload(self, payload: dict) -> Any:
+        from app.services.shop_scan_service import ShopListingSnapshot
+
+        price_payload = payload.get("price") or {}
+        shipping_payload = payload.get("shippingOptions") or []
+        first_shipping = shipping_payload[0] if shipping_payload else {}
+        shipping_cost_payload = first_shipping.get("shippingCost") or {}
+        image_payload = payload.get("image") or {}
+        item_id = payload.get("legacyItemId") or payload.get("itemId") or ""
+
+        price = Decimal(price_payload.get("value")) if price_payload.get("value") is not None else None
+        shipping_cost = (
+            Decimal(shipping_cost_payload.get("value")) if shipping_cost_payload.get("value") is not None else Decimal("0")
+        )
+        total_cost = None if price is None else (price + shipping_cost).quantize(Decimal("0.01"))
+
+        return ShopListingSnapshot(
+            legacy_item_id=str(item_id).split("|")[-1],
+            title=payload.get("title") or "",
+            item_url=payload.get("itemWebUrl") or "",
+            image_url=image_payload.get("imageUrl"),
+            currency=price_payload.get("currency"),
+            price=price,
+            shipping_cost=shipping_cost,
+            total_cost=total_cost,
+            availability=payload.get("availability") or payload.get("buyingOptions", [None])[0],
         )

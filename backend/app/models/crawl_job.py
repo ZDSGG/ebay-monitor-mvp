@@ -20,6 +20,12 @@ class CrawlJob(Base):
         nullable=True,
         index=True,
     )
+    shop_id: Mapped[uuid.UUID | None] = mapped_column(
+        PG_UUID(as_uuid=True),
+        ForeignKey("shops.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     status: Mapped[JobStatus] = mapped_column(
         Enum(JobStatus, name="job_status_enum"),
         nullable=False,
@@ -33,3 +39,4 @@ class CrawlJob(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     item = relationship("MonitoredItem", back_populates="crawl_jobs")
+    shop = relationship("Shop", back_populates="crawl_jobs")

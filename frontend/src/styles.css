@@ -674,6 +674,34 @@ textarea {
   justify-content: flex-end;
 }
 
+.shop-list-grid,
+.alert-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.shop-card,
+.alert-card,
+.shop-summary-panel {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.shop-search {
+  min-width: 240px;
+}
+
+.shop-summary-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .drawer-summary {
   margin: 0;
   color: var(--muted);
@@ -751,6 +779,11 @@ textarea {
   }
 
   .detail-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-list-grid,
+  .alert-list {
     grid-template-columns: 1fr;
   }
 }
