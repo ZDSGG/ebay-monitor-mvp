@@ -47,7 +47,7 @@ def parse_ebay_shop_url(url: str) -> ParsedShopUrl:
         shop_name = seller_username
     elif len(path_parts) >= 2 and path_parts[0] == "str":
         shop_name = path_parts[1]
-        seller_username = query.get("_ssn", [None])[0]
+        seller_username = query.get("_ssn", [None])[0] or path_parts[1]
     elif path_parts and path_parts[0] == "sch":
         seller_username = query.get("_ssn", [None])[0]
         shop_name = seller_username
@@ -64,7 +64,10 @@ def parse_ebay_shop_url(url: str) -> ParsedShopUrl:
         )
 
     normalized_shop_name = shop_name or seller_username
-    normalized_url = f"https://{host}/usr/{seller_username}"
+    if len(path_parts) >= 2 and path_parts[0] == "str" and query.get("_ssn", [None])[0] is None:
+        normalized_url = f"https://{host}/str/{normalized_shop_name}"
+    else:
+        normalized_url = f"https://{host}/usr/{seller_username}"
 
     return ParsedShopUrl(
         marketplace=marketplace,
