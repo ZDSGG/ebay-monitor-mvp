@@ -151,6 +151,7 @@ class EbayClient:
         # Browse Search currently rejects seller-only queries for some accounts.
         # Use a sharded q-search strategy and merge by legacy item id.
         all_items: dict[str, dict[str, Any]] = {}
+        matched_items: dict[str, dict[str, Any]] = {}
         limit = 50
         max_items = 500
         query_seeds = list(string.ascii_lowercase) + list(string.digits)
@@ -178,6 +179,9 @@ class EbayClient:
                     if not legacy_item_id:
                         continue
                     all_items[legacy_item_id] = item
+                    item_seller = ((item.get("seller") or {}).get("username") or "").strip().lower()
+                    if item_seller == seller_username.strip().lower():
+                        matched_items[legacy_item_id] = item
                     if len(all_items) >= max_items:
                         break
 
@@ -190,7 +194,16 @@ class EbayClient:
 
         from app.services.shop_scan_service import ShopListingSnapshot
 
-        return [self._map_item_summary_payload(item) for item in all_items.values()]
+        if not matched_items:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "eBay search results could not be reliably constrained to the requested seller. "
+                    "Shop scan aborted to avoid importing unrelated listings."
+                ),
+            )
+
+        return [self._map_item_summary_payload(item) for item in matched_items.values()]
 
     def _get_valid_token(self) -> str:
         now = time.time()
