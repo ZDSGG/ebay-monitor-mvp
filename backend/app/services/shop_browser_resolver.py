@@ -35,6 +35,7 @@ def resolve_shop_identity(host: str, shop_slug: str) -> ResolvedShopIdentity:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(
                 headless=True,
+                executable_path=playwright.chromium.executable_path,
                 args=[
                     "--lang=en-US",
                 ],

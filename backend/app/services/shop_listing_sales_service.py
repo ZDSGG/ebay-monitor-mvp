@@ -24,7 +24,11 @@ class ShopListingSalesService:
 
         try:
             with sync_playwright() as playwright:
-                browser = playwright.chromium.launch(headless=True, args=["--lang=en-US"])
+                browser = playwright.chromium.launch(
+                    headless=True,
+                    executable_path=playwright.chromium.executable_path,
+                    args=["--lang=en-US"],
+                )
                 context = browser.new_context(
                     locale=self.settings.shop_browser_locale,
                     timezone_id=self.settings.shop_browser_timezone_id,
